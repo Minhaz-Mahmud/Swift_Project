@@ -124,5 +124,90 @@ struct ContentView: View {
         }
     }
 
+    func login() {
+        Auth.auth().signIn(withEmail: email, password: password) { result, error in
+            if let error = error {
+                errorMessage = error.localizedDescription
+            } else {
+                userIsLoggedIn = true
+                errorMessage = ""
+            }
+        }
+    }
+
 }    
+
+
+
+struct APIListView: View {
+    @State private var records: [Record] = []
+
+    var body: some View {
+        NavigationView {
+            List(records, id: \.roll) { record in
+                NavigationLink(destination: ContactDetailView(record: record)) {
+                    HStack {
+                        AsyncImage(url: URL(string: record.image)) { phase in
+                            switch phase {
+                            case .empty:
+                                ProgressView()
+                                    .frame(width: 50, height: 50)
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 50, height: 50)
+                            case .failure:
+                                Image(systemName: "xmark.circle")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 50, height: 50)
+                                    .foregroundColor(.red)
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
+
+                        VStack(alignment: .leading) {
+                            Text(record.name)
+                                .font(.headline)
+                            Text("City: \(record.city)")
+                                .font(.subheadline)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Records")
+            .onAppear(perform: fetchRecords)
+        }
+    }
+
+    func fetchRecords() {
+        guard let url = URL(string: "https://api.myjson.online/v1/records/02f699b5-2a8b-466a-8898-3b893407c05a") else {
+            print("Invalid URL")
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("Network error: \(error.localizedDescription)")
+                return
+            }
+
+            guard let data = data else {
+                print("No data received")
+                return
+            }
+
+            do {
+                let apiResponse = try JSONDecoder().decode(APIResponse.self, from: data)
+                DispatchQueue.main.async {
+                    records = apiResponse.data
+                }
+            } catch {
+                print("Decoding error: \(error.localizedDescription)")
+            }
+        }.resume()
+    }
+}
    
