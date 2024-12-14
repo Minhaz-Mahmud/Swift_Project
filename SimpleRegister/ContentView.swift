@@ -210,4 +210,93 @@ struct APIListView: View {
         }.resume()
     }
 }
+
+
+struct ContactDetailView: View {
+    let record: Record
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        VStack(spacing: 20) {
+            AsyncImage(url: URL(string: record.image)) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                        .frame(width: 100, height: 100)
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 150, height: 150)
+                case .failure:
+                    Image(systemName: "xmark.circle")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 100, height: 100)
+                        .foregroundColor(.red)
+                @unknown default:
+                    EmptyView()
+                }
+            }
+
+            Text(record.name)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+
+            Text("City: \(record.city)")
+                .font(.title2)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Email: \(record.contact.email)")
+                    .font(.body)
+                    .foregroundColor(.blue)
+                Text("Phone: \(record.contact.phone)")
+                    .font(.body)
+                    .foregroundColor(.green)
+            }
+            .padding()
+
+            Spacer()
+
+            // Custom Back Button
+            Button(action: {
+                presentationMode.wrappedValue.dismiss()
+            }) {
+                Text("Back to List")
+                    .bold()
+                    .frame(width: 200, height: 40)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+        }
+        .navigationTitle("Contact Details")
+        .navigationBarBackButtonHidden(true) // Hides default back button
+        .padding()
+    }
+}
+
+struct APIResponse: Codable {
+    let data: [Record]
+}
+
+struct Record: Codable {
+    let city: String
+    let name: String
+    let roll: Int
+    let image: String
+    let contact: Contact
+}
+
+struct Contact: Codable {
+    let email: String
+    let phone: String
+}
+
+struct APIListView_Previews: PreviewProvider {
+    static var previews: some View {
+        APIListView()
+    }
+}
+
    
